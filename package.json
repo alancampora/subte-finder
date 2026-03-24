@@ -1,0 +1,34 @@
+{
+  "name": "subte-finder",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:server": "tsc -p tsconfig.json",
+    "build:client": "vite build",
+    "build": "npm run build:server && npm run build:client",
+    "start": "node dist/server.js",
+    "dev:server": "tsx watch src/server.ts",
+    "dev:client": "vite",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "typecheck": "tsc -p tsconfig.client.json --noEmit"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
+    "jquery": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/express-rate-limit": "^5.1.3",
+    "@types/jquery": "^3.5.32",
+    "@types/node": "^22.13.10",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vite": "^8.0.2"
+  }
+}
