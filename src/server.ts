@@ -19,6 +19,8 @@ const app = express();
 // ─── Security headers ───────────────────────────────────────────────────────
 app.use(helmet({
   crossOriginOpenerPolicy: false,
+  strictTransportSecurity: false,
+  contentSecurityPolicy: false,
 }));
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
