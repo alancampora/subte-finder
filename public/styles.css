@@ -545,6 +545,192 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+/* Subte map */
+.subte-map {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.map-header {
+  margin-bottom: 8px;
+}
+
+.map-title {
+  font-family: 'Geist', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.map-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.map-line-label {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.map-track-container {
+  flex: 1;
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.map-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.4;
+}
+
+.map-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  border: 2px solid var(--surface);
+  transform: translateX(-50%);
+  z-index: 2;
+  cursor: default;
+}
+
+.map-dot-selected {
+  width: 12px;
+  height: 12px;
+  background: var(--text);
+  border: 2px solid var(--lineA);
+  z-index: 3;
+}
+
+.map-dot-label {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-bottom: 4px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.map-dot:hover .map-dot-label,
+.map-dot-selected .map-dot-label {
+  display: block;
+}
+
+.map-train {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  transform: translateX(-50%);
+  z-index: 4;
+  animation: train-pulse 2s infinite;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+  cursor: default;
+}
+
+.map-train-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.map-train-label-top {
+  bottom: 100%;
+  margin-bottom: 4px;
+}
+
+.map-train-label-bottom {
+  top: 100%;
+  margin-top: 4px;
+}
+
+@keyframes train-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.map-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+.map-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.map-legend-train {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--lineA);
+}
+
+.map-legend-selected {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 2px solid var(--lineA);
+}
+
 /* Responsive */
 @media (max-width: 400px) {
   .station-name { font-size: 22px; }

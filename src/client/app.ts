@@ -9,6 +9,7 @@ import { TrainList } from './components/train-list';
 import { RefreshBar } from './components/refresh-bar';
 import { StationPicker } from './components/station-picker';
 import { isSubteInService, getNextServiceStart } from './schedule';
+import { SubteMap } from './components/subte-map';
 import { ThemeToggle } from './components/theme-toggle';
 
 const API_ENDPOINT = '/subte';
@@ -103,6 +104,7 @@ function renderResults(data: SubteApiResponse): void {
     html += TrainList.render(trips, currentStation!.color);
   }
 
+  html += SubteMap.render(data, currentStation);
   html += RefreshBar.render();
 
   $('#results').html(html);
