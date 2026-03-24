@@ -1,47 +1,84 @@
 import $ from 'jquery';
 import type { SubteApiResponse, Station } from './types';
 import { findNearestStation, findRelevantTrips } from './utils';
+import { STATIONS } from './stations';
 import { ErrorCard } from './components/error-card';
 import { StatusBar } from './components/status-bar';
 import { StationCard } from './components/station-card';
 import { TrainList } from './components/train-list';
 import { RefreshBar } from './components/refresh-bar';
+import { StationPicker } from './components/station-picker';
 import { isSubteInService, getNextServiceStart } from './schedule';
 import { ThemeToggle } from './components/theme-toggle';
 
 const API_ENDPOINT = '/subte';
 const REFRESH_INTERVAL = 30;
 
-let userLat: number | null = null;
-let userLng: number | null = null;
+let currentStation: Station | null = null;
+let currentDistance: number | null = null;
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
+function showPicker(): void {
+  clearTimers();
+  $('#statusBar').empty();
+  $('#results').html(StationPicker.render());
+
+  $('.picker-station').on('click', function () {
+    const name = $(this).data('name') as string;
+    const line = $(this).data('line') as string;
+    const station = STATIONS.find(s => s.name === name && s.line === line);
+    if (station) {
+      StationPicker.save(station);
+      currentStation = station;
+      currentDistance = null;
+      fetchAndRender();
+    }
+  });
+
+  $('#stationSearch').on('input', function () {
+    const query = ($(this).val() as string).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+    $('.picker-line-card').show();
+    $('.picker-station').each(function () {
+      const name = ($(this).data('name') as string).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      $(this).toggle(name.includes(query));
+    });
+    $('.picker-line-card').each(function () {
+      const hasVisible = $(this).find('.picker-station:visible').length > 0;
+      $(this).toggle(hasVisible);
+    });
+  });
+
+  $('#useLocationBtn').on('click', () => {
+    StationPicker.clear();
+    requestLocation();
+  });
+}
+
 function fetchAndRender(): void {
-  if (!userLat || !userLng) {
-    StatusBar.render('Esperando ubicacion...', 'loading');
+  if (!currentStation) {
+    StatusBar.render('Esperando estacion...', 'loading');
     return;
   }
 
   if (!isSubteInService()) {
     const nextStart = getNextServiceStart();
-    const { station, distance } = findNearestStation(userLat, userLng);
-    let html = StationCard.render(station, distance);
+    let html = StationCard.render(currentStation, currentDistance);
     html += ErrorCard.render(`Servicio fuera de horario.<br>Proximo inicio: <strong>${nextStart} hs</strong>`);
     $('#results').html(html);
+    bindChangeStation();
     StatusBar.render('Fuera de servicio', '');
     clearTimers();
     return;
   }
-
-  const { station, distance } = findNearestStation(userLat, userLng);
 
   StatusBar.render('Actualizando...', 'loading');
 
   $.ajax({
     url: API_ENDPOINT,
     success(data: SubteApiResponse) {
-      renderResults(data, station, distance);
+      renderResults(data);
       const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       StatusBar.render(`Actualizado · ${time}`, 'ok');
       startCountdown();
@@ -55,24 +92,29 @@ function fetchAndRender(): void {
   });
 }
 
-function renderResults(data: SubteApiResponse, station: Station, distance: number): void {
-  const trips = findRelevantTrips(data.Entity || [], station);
+function renderResults(data: SubteApiResponse): void {
+  const trips = findRelevantTrips(data.Entity || [], currentStation!);
 
-  let html = StationCard.render(station, distance);
+  let html = StationCard.render(currentStation!, currentDistance);
 
   if (trips.length === 0) {
-    html += ErrorCard.render(`No hay trenes activos para <strong>${station.name}</strong> en este momento.`);
+    html += ErrorCard.render(`No hay trenes activos para <strong>${currentStation!.name}</strong> en este momento.`);
   } else {
-    html += TrainList.render(trips, station.color);
+    html += TrainList.render(trips, currentStation!.color);
   }
 
   html += RefreshBar.render();
 
   $('#results').html(html);
+  bindChangeStation();
   $('#refreshNow').on('click', () => {
     clearTimers();
     fetchAndRender();
   });
+}
+
+function bindChangeStation(): void {
+  $('#changeStation').on('click', showPicker);
 }
 
 function startCountdown(): void {
@@ -100,8 +142,9 @@ function requestLocation(): void {
 
   navigator.geolocation.getCurrentPosition(
     pos => {
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
+      const { station, distance } = findNearestStation(pos.coords.latitude, pos.coords.longitude);
+      currentStation = station;
+      currentDistance = distance;
       fetchAndRender();
     },
     err => {
@@ -116,12 +159,14 @@ function requestLocation(): void {
 
 $(() => {
   ThemeToggle.init();
-
-  if (!navigator.geolocation) {
-    $('#main').html(ErrorCard.render('Tu navegador no soporta geolocalizacion.'));
-    return;
-  }
-
   $('#main').html(`${StatusBar.renderContainer()}<div id="results"></div>`);
-  requestLocation();
+
+  const saved = StationPicker.getSaved();
+  if (saved) {
+    currentStation = saved;
+    currentDistance = null;
+    fetchAndRender();
+  } else {
+    showPicker();
+  }
 });
