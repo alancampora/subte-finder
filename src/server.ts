@@ -17,7 +17,9 @@ for (const key of required) {
 const app = express();
 
 // ─── Security headers ───────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginOpenerPolicy: false,
+}));
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 app.use(cors({
