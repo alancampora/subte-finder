@@ -24,15 +24,18 @@ function estimateTrainPositions(data: SubteApiResponse): TrainPosition[] {
     const estaciones = entity.Linea.Estaciones;
     if (estaciones.length === 0) return;
 
-    // Find the station with the smallest positive arrival time (next stop)
+    // Find the station closest to now (smallest absolute diff)
+    // The API often returns negative times for stations the train already passed
     let nearestIdx = -1;
-    let nearestTime = Infinity;
+    let nearestAbsDiff = Infinity;
+    let nearestDiff = 0;
     let nearestName = '';
     estaciones.forEach(est => {
       const diff = est.arrival.time - now;
-      if (diff >= 0 && diff < nearestTime) {
-        nearestTime = diff;
-        // Find this station's index in our ordered list
+      const absDiff = Math.abs(diff);
+      if (absDiff < nearestAbsDiff) {
+        nearestAbsDiff = absDiff;
+        nearestDiff = diff;
         const stIdx = lineStations.findIndex(s =>
           s.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() ===
           est.stop_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -46,17 +49,10 @@ function estimateTrainPositions(data: SubteApiResponse): TrainPosition[] {
 
     if (nearestIdx < 0) return;
 
-    // Interpolate: if arrival is 0s away, train is at station.
-    // If further away, train is slightly before the station.
     const total = lineStations.length - 1;
-    const stationProgress = nearestIdx / total;
-    const offset = Math.min(nearestTime / 300, 1) * (1 / total); // up to 1 station back
-    const dir = entity.Linea.Direction_ID;
-    const progress = dir === 0
-      ? Math.max(0, stationProgress - offset)
-      : Math.min(1, stationProgress + offset);
+    const progress = nearestIdx / total;
 
-    positions.push({ line, progress, direction: dir, stationName: nearestName });
+    positions.push({ line, progress, direction: entity.Linea.Direction_ID, stationName: nearestName });
   });
 
   return positions;

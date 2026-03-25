@@ -56,6 +56,18 @@ app.get('/subte', async (_req: Request, res: Response) => {
     }
 
     const data = await apiRes.json();
+
+    // Add formatted_time for debugging
+    for (const entity of data.Entity || []) {
+      for (const est of entity.Linea?.Estaciones || []) {
+        if (est.arrival?.time) {
+          est.arrival.formatted_time = new Date(est.arrival.time * 1000).toLocaleTimeString('es-AR', {
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires',
+          });
+        }
+      }
+    }
+
     return res.json(data);
 
   } catch (err) {
