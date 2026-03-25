@@ -44,3 +44,19 @@ export interface RelevantTrip {
   entity: SubteEntity;
   stop: StopEstacion;
 }
+
+export interface ActiveFormation {
+  id: string;
+  line: string;
+  direction: number;
+  stationName: string;
+  stationIndex: number;
+  totalStations: number;
+  progress: number;
+  updatedAt: number;
+}
+
+export interface FormationsResponse {
+  formations: ActiveFormation[];
+  lastPoll: number;
+}

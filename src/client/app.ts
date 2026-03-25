@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import type { SubteApiResponse, Station } from './types';
+import type { SubteApiResponse, FormationsResponse, Station } from './types';
 import { findNearestStation, findRelevantTrips } from './utils';
 import { STATIONS } from './stations';
 import { ErrorCard } from './components/error-card';
@@ -76,24 +76,26 @@ function fetchAndRender(): void {
 
   StatusBar.render('Actualizando...', 'loading');
 
-  $.ajax({
-    url: API_ENDPOINT,
-    success(data: SubteApiResponse) {
-      renderResults(data);
+  $.when(
+    $.ajax({ url: API_ENDPOINT }),
+    $.ajax({ url: '/subte/formaciones' }),
+  ).then(
+    (subteRes: [SubteApiResponse], formacionesRes: [FormationsResponse]) => {
+      renderResults(subteRes[0], formacionesRes[0]);
       const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       StatusBar.render(`Actualizado · ${time}`, 'ok');
       startCountdown();
     },
-    error(xhr: JQuery.jqXHR) {
+    (xhr: JQuery.jqXHR) => {
       StatusBar.render('Error al obtener datos', 'error');
       $('#results').html(
         ErrorCard.render(`Error ${xhr.status}: No se pudo conectar a la API.<br><small>${xhr.statusText}</small>`)
       );
-    }
-  });
+    },
+  );
 }
 
-function renderResults(data: SubteApiResponse): void {
+function renderResults(data: SubteApiResponse, formationData?: FormationsResponse): void {
   const trips = findRelevantTrips(data.Entity || [], currentStation!);
 
   let html = StationCard.render(currentStation!, currentDistance);
@@ -104,7 +106,7 @@ function renderResults(data: SubteApiResponse): void {
     html += TrainList.render(trips, currentStation!.color);
   }
 
-  html += SubteMap.render(data, currentStation);
+  html += SubteMap.render(formationData?.formations || [], currentStation);
   html += RefreshBar.render();
 
   $('#results').html(html);

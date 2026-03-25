@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import { FormationTracker } from './train-tracker';
 
 // ─── Validate required env vars ─────────────────────────────────────────────
 const required = ['SUBTE_API_URL', 'SUBTE_CLIENT_ID', 'SUBTE_CLIENT_SECRET'] as const;
@@ -77,6 +78,35 @@ app.get('/subte', async (_req: Request, res: Response) => {
   }
 });
 
+// ─── Train tracker ──────────────────────────────────────────────────────────
+const tracker = new FormationTracker();
+const POLL_INTERVAL = 60 * 1000; // 1 minute
+
+async function pollApi(): Promise<void> {
+  try {
+    const url = new URL(process.env.SUBTE_API_URL!);
+    url.searchParams.set('client_id', process.env.SUBTE_CLIENT_ID!);
+    url.searchParams.set('client_secret', process.env.SUBTE_CLIENT_SECRET!);
+
+    const apiRes = await fetch(url.toString(), {
+      headers: { 'Accept': 'application/json' },
+    });
+
+    if (!apiRes.ok) return;
+
+    const data = await apiRes.json();
+    tracker.processSnapshot(data);
+    console.log(`[tracker] Poll OK — ${tracker.getFormations().formations.length} formaciones activas`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[tracker] Poll error:', message);
+  }
+}
+
+app.get('/subte/formaciones', (_req: Request, res: Response) => {
+  res.json(tracker.getFormations());
+});
+
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
@@ -86,6 +116,11 @@ app.get('/health', (_req: Request, res: Response) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n🚇 Subte proxy corriendo en http://localhost:${PORT}`);
-  console.log(`   GET /subte   → datos de la API`);
-  console.log(`   GET /health  → estado del servidor\n`);
+  console.log(`   GET /subte         → datos de la API`);
+  console.log(`   GET /subte/formaciones → posiciones de formaciones`);
+  console.log(`   GET /health        → estado del servidor\n`);
+
+  // Start polling immediately, then every minute
+  pollApi();
+  setInterval(pollApi, POLL_INTERVAL);
 });

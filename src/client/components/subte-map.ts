@@ -1,67 +1,11 @@
-import type { SubteApiResponse, SubteEntity, Station } from '../types';
+import type { ActiveFormation, Station } from '../types';
 import { STATIONS } from '../stations';
 import { lineFriendlyName } from '../utils';
 
-interface TrainPosition {
-  line: string;
-  /** 0–1 position along the line track */
-  progress: number;
-  direction: number;
-  stationName: string;
-}
-
 const LINE_ORDER = ['LineaA', 'LineaB', 'LineaC', 'LineaD', 'LineaE', 'LineaH'];
 
-function estimateTrainPositions(data: SubteApiResponse): TrainPosition[] {
-  const positions: TrainPosition[] = [];
-  const now = Math.floor(Date.now() / 1000);
-
-  (data.Entity || []).forEach((entity: SubteEntity) => {
-    const line = entity.Linea.Route_Id;
-    const lineStations = STATIONS.filter(s => s.line === line);
-    if (lineStations.length === 0) return;
-
-    const estaciones = entity.Linea.Estaciones;
-    if (estaciones.length === 0) return;
-
-    // Find the station closest to now (smallest absolute diff)
-    // The API often returns negative times for stations the train already passed
-    let nearestIdx = -1;
-    let nearestAbsDiff = Infinity;
-    let nearestDiff = 0;
-    let nearestName = '';
-    estaciones.forEach(est => {
-      const diff = est.arrival.time - now;
-      const absDiff = Math.abs(diff);
-      if (absDiff < nearestAbsDiff) {
-        nearestAbsDiff = absDiff;
-        nearestDiff = diff;
-        const stIdx = lineStations.findIndex(s =>
-          s.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() ===
-          est.stop_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-        );
-        if (stIdx >= 0) {
-          nearestIdx = stIdx;
-          nearestName = lineStations[stIdx].name;
-        }
-      }
-    });
-
-    if (nearestIdx < 0) return;
-
-    const total = lineStations.length - 1;
-    const progress = nearestIdx / total;
-
-    positions.push({ line, progress, direction: entity.Linea.Direction_ID, stationName: nearestName });
-  });
-
-  return positions;
-}
-
 export const SubteMap = {
-  render(data: SubteApiResponse | null, selectedStation: Station | null): string {
-    const trains = data ? estimateTrainPositions(data) : [];
-
+  render(formations: ActiveFormation[], selectedStation: Station | null): string {
     const lines = LINE_ORDER.map(lineId => {
       const lineStations = STATIONS.filter(s => s.line === lineId);
       if (lineStations.length === 0) return '';
@@ -78,12 +22,14 @@ export const SubteMap = {
         </div>`;
       }).join('');
 
-      const lineTrains = trains.filter(t => t.line === lineId);
+      const lineTrains = formations.filter(t => t.line === lineId);
       const trainDots = lineTrains.map((t, i) => {
         const pct = t.progress * 100;
+        const arrow = t.direction === 0 ? '→' : '←';
         const labelCls = i % 2 === 0 ? 'map-train-label map-train-label-top' : 'map-train-label map-train-label-bottom';
-        return `<div class="map-train" style="left: ${pct}%; background: ${color}">
-          <span class="${labelCls}">${t.stationName}</span>
+        const arrowCls = t.direction === 0 ? 'map-train-arrow-right' : 'map-train-arrow-left';
+        return `<div class="map-train ${arrowCls}" style="left: ${pct}%; background: ${color}">
+          <span class="${labelCls}">${arrow} ${t.stationName}</span>
         </div>`;
       }).join('');
 
@@ -107,7 +53,7 @@ export const SubteMap = {
         ${lines}
         <div class="map-legend">
           <span class="map-legend-item"><span class="map-legend-dot"></span> Estacion</span>
-          <span class="map-legend-item"><span class="map-legend-train"></span> Tren</span>
+          <span class="map-legend-item"><span class="map-legend-train"></span> Formacion</span>
           ${selectedStation ? '<span class="map-legend-item"><span class="map-legend-selected"></span> Tu estacion</span>' : ''}
         </div>
       </div>
