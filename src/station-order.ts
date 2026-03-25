@@ -9,9 +9,9 @@ export const LINE_STATIONS: Record<string, string[]> = {
     'San Jose de Flores', 'San Pedrito',
   ],
   LineaB: [
-    'Leandro N. Alem', 'Florida', 'Carlos Pellegrini', 'Uruguay', 'Callao',
+    'Leandro N. Alem', 'Florida', 'Carlos Pelegrini', 'Uruguay', 'Callao',
     'Pasteur', 'Pueyrredon', 'Carlos Gardel', 'Medrano', 'Angel Gallardo',
-    'Malabia', 'Dorrego', 'Federico Lacroze', 'Tronador', 'De Los Incas',
+    'Malabia', 'Dorrego', 'Federico Lacroze', 'Tronador - Villa Ortuzar', 'De Los Incas - Parque Chas',
     'Echeverria', 'Juan Manuel de Rosas',
   ],
   LineaC: [
@@ -27,7 +27,7 @@ export const LINE_STATIONS: Record<string, string[]> = {
   LineaE: [
     'Retiro', 'Catalinas', 'Correo Central', 'Bolivar', 'Belgrano',
     'Independencia', 'San Jose', 'Entre Rios', 'Pichincha', 'Jujuy',
-    'Urquiza', 'Boedo', 'Av. La Plata', 'Jose Maria Moreno', 'Emilio Mitre',
+    'General Urquiza', 'Boedo', 'Av. La Plata', 'Moreno', 'Emilio Mitre',
     'Medalla Milagrosa', 'Varela', 'Plaza de los Virreyes',
   ],
   LineaH: [
