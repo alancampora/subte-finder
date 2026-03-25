@@ -4,42 +4,72 @@ import { lineFriendlyName } from '../utils';
 
 const LINE_ORDER = ['LineaA', 'LineaB', 'LineaC', 'LineaD', 'LineaE', 'LineaH'];
 
+function renderTrack(
+  lineStations: Station[],
+  formations: ActiveFormation[],
+  color: string,
+  arrowCls: string,
+  selectedStation: Station | null,
+  showSelectedLabel: boolean,
+): string {
+  const total = lineStations.length - 1;
+
+  const dots = lineStations.map((s, i) => {
+    const pct = (i / total) * 100;
+    const isSelected = selectedStation && s.name === selectedStation.name && s.line === selectedStation.line;
+    const cls = isSelected ? 'map-dot map-dot-selected' : 'map-dot';
+    const labelHtml = isSelected && showSelectedLabel ? `<span class="map-dot-label">${s.name}</span>` : '';
+    return `<div class="${cls}" style="left: ${pct}%">${labelHtml}</div>`;
+  }).join('');
+
+  const formationDots = formations.map(t => {
+    const pct = t.progress * 100;
+    return `<div class="map-train ${arrowCls}" style="left: ${pct}%; background: ${color}">
+      <span class="map-train-label">${t.stationName}</span>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="map-track-container">
+      <div class="map-track" style="background: ${color}"></div>
+      ${dots}
+      ${formationDots}
+    </div>
+  `;
+}
+
 export const SubteMap = {
   render(formations: ActiveFormation[], selectedStation: Station | null): string {
     const lines = LINE_ORDER.map(lineId => {
       const lineStations = STATIONS.filter(s => s.line === lineId);
       if (lineStations.length === 0) return '';
       const color = lineStations[0].color;
-      const total = lineStations.length - 1;
       const label = lineId.replace('Linea', '');
+      const first = lineStations[0].name;
+      const last = lineStations[lineStations.length - 1].name;
 
-      const stationDots = lineStations.map((s, i) => {
-        const pct = (i / total) * 100;
-        const isSelected = selectedStation && s.name === selectedStation.name && s.line === selectedStation.line;
-        const cls = isSelected ? 'map-dot map-dot-selected' : 'map-dot';
-        return `<div class="${cls}" style="left: ${pct}%" title="${s.name}">
-          <span class="map-dot-label">${s.name}</span>
-        </div>`;
-      }).join('');
+      const lineFormations = formations.filter(t => t.line === lineId);
+      const rightFormations = lineFormations.filter(t => t.direction === 0);
+      const leftFormations = lineFormations.filter(t => t.direction === 1);
 
-      const lineTrains = formations.filter(t => t.line === lineId);
-      const trainDots = lineTrains.map((t, i) => {
-        const pct = t.progress * 100;
-        const arrow = t.direction === 0 ? '→' : '←';
-        const labelCls = i % 2 === 0 ? 'map-train-label map-train-label-top' : 'map-train-label map-train-label-bottom';
-        const arrowCls = t.direction === 0 ? 'map-train-arrow-right' : 'map-train-arrow-left';
-        return `<div class="map-train ${arrowCls}" style="left: ${pct}%; background: ${color}">
-          <span class="${labelCls}">${arrow} ${t.stationName}</span>
-        </div>`;
-      }).join('');
+      const trackRight = renderTrack(lineStations, rightFormations, color, 'map-train-arrow-right', selectedStation, true);
+      const trackLeft = renderTrack(lineStations, leftFormations, color, 'map-train-arrow-left', selectedStation, false);
 
       return `
-        <div class="map-line">
-          <div class="map-line-label" style="background: ${color}">${label}</div>
-          <div class="map-track-container">
-            <div class="map-track" style="background: ${color}"></div>
-            ${stationDots}
-            ${trainDots}
+        <div class="map-line-block">
+          <div class="map-line-header-row">
+            <div class="map-line-label" style="background: ${color}">${label}</div>
+            <span class="map-line-terminals">${first} — ${last}</span>
+          </div>
+          <div class="map-dual-track">
+            <div class="map-direction">
+              <span class="map-dir-arrow">→</span>
+              ${trackRight}
+            </div>
+            <div class="map-direction">
+              <span class="map-dir-arrow">←</span>
+              ${trackLeft}
+            </div>
           </div>
         </div>
       `;
